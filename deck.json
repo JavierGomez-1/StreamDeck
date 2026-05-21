@@ -1,0 +1,157 @@
+{
+  "title": "S70 Stream Deck",
+  "homePageId": "home",
+  "programsPageId": "programs",
+  "pages": [
+    {
+      "id": "home",
+      "title": "Principal",
+      "buttons": [
+        {
+          "id": "programs",
+          "label": "Programas",
+          "icon": "APP",
+          "action": "navigate",
+          "targetPage": "programs",
+          "cssClass": "blue"
+        },
+        {
+          "id": "add-apps",
+          "label": "Agregar Apps",
+          "icon": "+",
+          "action": "navigate",
+          "targetPage": "add-apps",
+          "cssClass": "green"
+        },
+        {
+          "id": "wifi",
+          "label": "WiFi",
+          "icon": "WIFI",
+          "action": "navigate",
+          "targetPage": "wifi",
+          "cssClass": "blue"
+        },
+        {
+          "id": "bluetooth",
+          "label": "Bluetooth",
+          "icon": "BT",
+          "action": "navigate",
+          "targetPage": "bluetooth",
+          "cssClass": "purple"
+        },
+        {
+          "id": "tools",
+          "label": "Herramientas",
+          "icon": "TOOL",
+          "action": "navigate",
+          "targetPage": "tools",
+          "cssClass": "green"
+        }
+      ]
+    },
+    {
+      "id": "programs",
+      "title": "Programas",
+      "buttons": [
+        {
+          "id": "back",
+          "label": "Regresar",
+          "icon": "BACK",
+          "action": "navigate",
+          "targetPage": "home",
+          "cssClass": "muted"
+        }
+      ]
+    },
+    {
+      "id": "wifi",
+      "title": "WiFi",
+      "buttons": [
+        {
+          "id": "wifi-status",
+          "label": "Estado WiFi",
+          "icon": "WIFI",
+          "action": "shell",
+          "command": "ifconfig",
+          "waitForExit": true,
+          "cssClass": "blue"
+        },
+        {
+          "id": "wifi-restart",
+          "label": "Reiniciar Red",
+          "icon": "NET",
+          "action": "shell",
+          "command": "systemctl restart NetworkManager 2>/dev/null || true",
+          "waitForExit": true,
+          "timeoutMs": 8000,
+          "cssClass": "green"
+        },
+        {
+          "id": "back",
+          "label": "Regresar",
+          "icon": "BACK",
+          "action": "navigate",
+          "targetPage": "home",
+          "cssClass": "muted"
+        }
+      ]
+    },
+    {
+      "id": "bluetooth",
+      "title": "Bluetooth",
+      "buttons": [
+        {
+          "id": "bt-status",
+          "label": "Estado BT",
+          "icon": "BT",
+          "action": "shell",
+          "command": "hciconfig -a || bluetoothctl show",
+          "waitForExit": true,
+          "cssClass": "purple"
+        },
+        {
+          "id": "bt-scan",
+          "label": "Scan BT",
+          "icon": "SCAN",
+          "action": "shell",
+          "command": "timeout 8 bluetoothctl scan on",
+          "waitForExit": true,
+          "timeoutMs": 10000,
+          "cssClass": "blue"
+        },
+        {
+          "id": "back",
+          "label": "Regresar",
+          "icon": "BACK",
+          "action": "navigate",
+          "targetPage": "home",
+          "cssClass": "muted"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Herramientas",
+      "buttons": [
+        {
+          "id": "ping",
+          "label": "Ping Local",
+          "icon": "PING",
+          "action": "launch",
+          "command": "ping",
+          "arguments": "-c 1 127.0.0.1",
+          "waitForExit": true,
+          "cssClass": "green"
+        },
+        {
+          "id": "back",
+          "label": "Regresar",
+          "icon": "BACK",
+          "action": "navigate",
+          "targetPage": "home",
+          "cssClass": "muted"
+        }
+      ]
+    }
+  ]
+}

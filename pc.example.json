@@ -1,0 +1,4 @@
+{
+  "enabled": true,
+  "baseUrl": "http://<PC-IP>:5055"
+}

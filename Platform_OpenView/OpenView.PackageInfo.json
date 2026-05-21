@@ -1,0 +1,100 @@
+{
+  "version": "4.1.1.10001",
+  "applicationType": "Dotnet",
+  "execCommand": "Ahsoka.CS.StreamDeck",
+  "packageName": "Ahsoka.CS.StreamDeck",
+  "packageDescription": "Touch Stream Deck for OpenView S70",
+  "applicationVersion": "1.0",
+  "packageApplicationFolder": "../Platform_OpenView/publish",
+  "packageOutputDirectory": "PackageOutput",
+  "licenses": [],
+  "optimizedServiceManager": false,
+  "customPackageInfo": {
+    "includeApplication": false,
+    "includeBootLogo": false,
+    "includeInstallerUI": false,
+    "includeFirmwareUpdate": false
+  },
+  "dotNetInfo": {
+    "projectPath": "../Ahsoka.CS.StreamDeck.csproj",
+    "publishProfile": "../Properties/PublishProfiles/FolderProfile.pubxml"
+  },
+  "serviceInfo": {
+    "runtimeConfiguration": {
+      "serviceStartup": "NoAutoStart",
+      "releaseOption": "NoAutoStart",
+      "extensionInfo": [
+        {
+          "extensionName": "Bluetooth Classic Extension",
+          "configurationFile": "BluetoothConfig.json"
+        },
+        {
+          "extensionName": "Device Extension"
+        }
+      ],
+      "startupDelay": 3,
+      "requireChallenge": "NotRequired",
+      "services": [
+        {
+          "serviceName": "SystemService",
+          "tcpListenAddress": "*",
+          "tcpConnectionAddress": "localhost",
+          "dataChannel": 5001,
+          "isExtension": false,
+          "behaviors": "AutoStart"
+        },
+        {
+          "serviceName": "NetworkService",
+          "tcpListenAddress": "*",
+          "tcpConnectionAddress": "localhost",
+          "dataChannel": 5003,
+          "isExtension": false,
+          "behaviors": "AutoStart"
+        },
+        {
+          "serviceName": "DeviceService",
+          "tcpListenAddress": "*",
+          "tcpConnectionAddress": "localhost",
+          "dataChannel": 5004,
+          "isExtension": false,
+          "behaviors": "AutoStart"
+        },
+        {
+          "serviceName": "BluetoothService",
+          "tcpListenAddress": "*",
+          "tcpConnectionAddress": "localhost",
+          "dataChannel": 5104,
+          "isExtension": true,
+          "behaviors": "AutoStart"
+        }
+      ]
+    },
+    "environmentValues": []
+  },
+  "screenConfiguration": {
+    "showUnknownSurfaces": false,
+    "bootLogoPath": "",
+    "orientation": 0,
+    "surfaceSetup": []
+  },
+  "hardwareConfiguration": {
+    "hardwareItems": [
+      {
+        "name": "WiFi Combo Module",
+        "deviceType": "OnboardWirelessComboModule",
+        "defaultState": "NoState",
+        "customStartup": "",
+        "autoEnable": true
+      }
+    ],
+    "usbStartStatePrimary": "Default",
+    "usbStartStateSecondary": "Default"
+  },
+  "packageType": "opvEncrypted",
+  "packageStructureVersion": 1,
+  "platformFamily": "OpenViewLinux",
+  "platformQualifier": "S70",
+  "securityMode": "None",
+  "applicationId": "d355dc91-4459-44ac-84fa-1e95b5754763",
+  "components": []
+}

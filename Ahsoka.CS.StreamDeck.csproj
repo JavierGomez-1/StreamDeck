@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Pages\**" />
+    <Compile Remove="publish\**" />
+    <Content Remove="Pages\**" />
+    <Content Remove="publish\**" />
+    <Content Remove="wwwroot\**" />
+    <Content Remove="appsettings.json" />
+    <Content Remove="TargetConnectionInfo*.json" />
+    <EmbeddedResource Remove="Pages\**" />
+    <EmbeddedResource Remove="publish\**" />
+    <EmbeddedResource Remove="wwwroot\**" />
+    <None Remove="Pages\**" />
+    <None Remove="publish\**" />
+    <None Remove="wwwroot\**" />
+    <None Remove="appsettings.json" />
+    <None Remove="TargetConnectionInfo*.json" />
+  </ItemGroup>
+
+  <Import Label="Ahsoka Local Build Properties" Condition="Exists('../Demo.Build.props')" Project="../Demo.Build.props" />
+
+  <ItemGroup Label="Reference to Ahsoka Nuget Packages" Condition="!Exists('../Demo.Build.props')">
+    <PackageReference Include="Ahsoka.Core" Version="4.*-*" />
+    <PackageReference Include="Ahsoka.Core.Drawing" Version="4.*-*" />
+    <PackageReference Include="Ahsoka.Extensions.Bluetooth.Classic" Version="4.*-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="deck.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="apps.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="pc.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="connections.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="theme.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="Platform_OpenView\BluetoothConfig.json" Link="BluetoothConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="AppIcons\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="scripts\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="Font.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="UiFont.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+    <None Include="Platform_OpenView\OpenView.PackageInfo.json" />
+  </ItemGroup>
+
+</Project>

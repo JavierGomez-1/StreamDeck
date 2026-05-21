@@ -1,0 +1,49 @@
+{
+  "adapterConfigurations": [
+    {
+      "stack": "StackBluez",
+      "deviceInterfacePath": "/org/bluez/hci0",
+      "adapterIndex": 0,
+      "deviceName": "S70 Stream Deck",
+      "deviceMacAddress": "",
+      "reportedClassOfDevice": {
+        "limitedDiscoverableModeService": false,
+        "positioningService": false,
+        "networkingService": false,
+        "renderingService": false,
+        "capturingService": false,
+        "objectTransferService": false,
+        "audioService": true,
+        "telephonyService": false,
+        "informationService": false,
+        "serviceClassDescription": "Audio",
+        "serviceClass": "Audio",
+        "majorDeviceClass": "DeviceClassAudioVideo",
+        "minorDeviceClass": 8
+      },
+      "allowedDeviceClasses": [
+        {
+          "limitedDiscoverableModeService": false,
+          "positioningService": false,
+          "networkingService": false,
+          "renderingService": false,
+          "capturingService": false,
+          "objectTransferService": false,
+          "audioService": true,
+          "telephonyService": true,
+          "informationService": false,
+          "serviceClassDescription": "Audio, Telephony",
+          "serviceClass": 768,
+          "majorDeviceClass": "DeviceClassPhone",
+          "minorDeviceClass": 3
+        }
+      ],
+      "supportedProfileServiceTypes": [
+        "AudioSinkProfileService"
+      ],
+      "discoveryTimeout": 20000,
+      "pairingTimeout": 10000,
+      "connectionTimeout": 5000
+    }
+  ]
+}

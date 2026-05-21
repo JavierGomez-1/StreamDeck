@@ -1,0 +1,21 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Local target / PC connection settings
+TargetConnectionInfo*.json
+!TargetConnectionInfo.S70.example.json
+pc.json
+connections.json
+
+# Generated OpenView artifacts
+Platform_OpenView/publish/
+Platform_OpenView/PackageOutput/
+*.opv
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak

@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <AhsokaCommandLinePath>$(ProjectDir)obj\PlatformSupport\Windows64_TargetSupport\CommandLine\Ahsoka.CommandLine.exe</AhsokaCommandLinePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <AhsokaCommandLinePath>$(ProjectDir)obj\PlatformSupport\MacOSARM64_TargetSupport\CommandLine\Ahsoka.CommandLine</AhsokaCommandLinePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <AhsokaCommandLinePath>$(ProjectDir)obj\PlatformSupport\Ubuntu64_TargetSupport\CommandLine\Ahsoka.CommandLine</AhsokaCommandLinePath>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,33 @@
+{
+  "fontFile": "UiFont.ttf",
+  "fontFamily": "Segoe UI",
+  "useLightLogoPlate": true,
+  "showButtonAccent": true,
+  "buttonStyle": "soft",
+  "colors": {
+    "background": "#101318",
+    "header": "#171D26",
+    "button": "#202735",
+    "buttonAlt": "#283241",
+    "buttonPressed": "#0B0F14",
+    "stroke": "#344153",
+    "text": "#F7F9FC",
+    "mutedText": "#BAC4D4",
+    "logoPlate": "#F4F7FB",
+    "logoPlateStroke": "#D8E0EC",
+    "blue": "#2D7DFF",
+    "green": "#22A06B",
+    "purple": "#8B6DFF",
+    "error": "#D14B4B",
+    "muted": "#505B6E"
+  },
+  "typography": {
+    "titleSize": 26,
+    "pageSize": 16,
+    "iconSize": 24,
+    "labelSize": 20,
+    "statusSize": 15,
+    "keyboardTitleSize": 26,
+    "keyboardTextSize": 22
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "isActive": true,
+  "isConnected": false,
+  "isFavorite": false,
+  "platformDescription": "OpenViewLinux (S70)",
+  "sshKeys": [
+    "(None)"
+  ],
+  "signingKeys": [
+    "(None)"
+  ],
+  "platformFamily": "OpenViewLinux",
+  "description": "OpenView",
+  "platformQualifier": "S70",
+  "hostName": "<S70-IP>",
+  "port": 0,
+  "systemServicePort": 5001,
+  "securityServicePort": 5007,
+  "userName": "root",
+  "privateKeyFile": "",
+  "privateKey": "(None)",
+  "privateAppKeyFile": "",
+  "privateAppKey": "(None)",
+  "connectionAddress": "tcp://<S70-IP>:5001"
+}
