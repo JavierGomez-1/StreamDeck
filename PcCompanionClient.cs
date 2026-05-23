@@ -5,7 +5,10 @@ namespace Ahsoka.CS.StreamDeck;
 
 public sealed class PcCompanionClient
 {
-    private readonly HttpClient httpClient = new();
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromMilliseconds(900);
+    private static readonly TimeSpan OfflineBackoff = TimeSpan.FromSeconds(20);
+
+    private readonly HttpClient httpClient;
     private readonly string settingsPath;
     private readonly string iconFolder;
     private PcCompanionSettings settings;
@@ -15,9 +18,11 @@ public sealed class PcCompanionClient
     private DateTime lastInstalledRefresh = DateTime.MinValue;
     private ConnectivityConfig cachedConnections = new();
     private DateTime lastConnectionsRefresh = DateTime.MinValue;
+    private DateTime companionOfflineUntil = DateTime.MinValue;
 
     public PcCompanionClient(string settingsPath)
     {
+        httpClient = new HttpClient { Timeout = RequestTimeout };
         this.settingsPath = settingsPath;
         iconFolder = Path.Combine(Path.GetDirectoryName(settingsPath)!, "PcIcons");
         settings = LoadSettings(settingsPath);
@@ -27,7 +32,7 @@ public sealed class PcCompanionClient
 
     public IReadOnlyList<DeckAppTemplate> GetCatalog()
     {
-        if (!IsEnabled)
+        if (!CanContactCompanion())
             return cachedCatalog;
 
         if ((DateTime.UtcNow - lastCatalogRefresh).TotalSeconds < 5)
@@ -45,10 +50,12 @@ public sealed class PcCompanionClient
             }
 
             lastCatalogRefresh = DateTime.UtcNow;
+            MarkOnline();
         }
         catch
         {
             lastCatalogRefresh = DateTime.UtcNow;
+            MarkOffline();
         }
 
         return cachedCatalog;
@@ -56,7 +63,7 @@ public sealed class PcCompanionClient
 
     public IReadOnlyList<DeckAppTemplate> GetInstalledApps()
     {
-        if (!IsEnabled)
+        if (!CanContactCompanion())
             return cachedInstalledApps;
 
         if ((DateTime.UtcNow - lastInstalledRefresh).TotalSeconds < 10)
@@ -74,10 +81,12 @@ public sealed class PcCompanionClient
             }
 
             lastInstalledRefresh = DateTime.UtcNow;
+            MarkOnline();
         }
         catch
         {
             lastInstalledRefresh = DateTime.UtcNow;
+            MarkOffline();
         }
 
         return cachedInstalledApps;
@@ -88,10 +97,14 @@ public sealed class PcCompanionClient
         if (!IsEnabled)
             return new DeckActionResult(false, "Companion PC no configurado.");
 
+        if (!CanContactCompanion())
+            return new DeckActionResult(false, "Companion PC no responde.");
+
         try
         {
             using var response = await httpClient.PostAsync($"{settings.BaseUrl.TrimEnd('/')}/api/apps/{Uri.EscapeDataString(appId)}/launch", null);
             string text = await response.Content.ReadAsStringAsync();
+            MarkOnline();
             if (response.IsSuccessStatusCode)
                 return new DeckActionResult(true, string.IsNullOrWhiteSpace(text) ? "App enviada a PC." : Trim(text));
 
@@ -99,6 +112,7 @@ public sealed class PcCompanionClient
         }
         catch (Exception ex)
         {
+            MarkOffline();
             return new DeckActionResult(false, $"PC companion no responde: {ex.Message}");
         }
     }
@@ -120,6 +134,9 @@ public sealed class PcCompanionClient
         if (!IsEnabled)
             return new DeckActionResult(false, "Companion PC no configurado.");
 
+        if (!CanContactCompanion())
+            return new DeckActionResult(false, "Companion PC no responde.");
+
         if (string.IsNullOrWhiteSpace(actionId))
             return new DeckActionResult(false, "Accion de streaming vacia.");
 
@@ -127,6 +144,7 @@ public sealed class PcCompanionClient
         {
             using var response = await httpClient.PostAsync($"{settings.BaseUrl.TrimEnd('/')}/api/stream/actions/{Uri.EscapeDataString(actionId)}", null);
             string text = await response.Content.ReadAsStringAsync();
+            MarkOnline();
             if (response.IsSuccessStatusCode)
                 return new DeckActionResult(true, string.IsNullOrWhiteSpace(text) ? "Accion enviada a PC." : Trim(text));
 
@@ -134,13 +152,14 @@ public sealed class PcCompanionClient
         }
         catch (Exception ex)
         {
+            MarkOffline();
             return new DeckActionResult(false, $"PC companion no responde: {ex.Message}");
         }
     }
 
     private void RefreshConnections()
     {
-        if (!IsEnabled)
+        if (!CanContactCompanion())
             return;
 
         if ((DateTime.UtcNow - lastConnectionsRefresh).TotalSeconds < 5)
@@ -152,16 +171,21 @@ public sealed class PcCompanionClient
                 .GetAwaiter()
                 .GetResult() ?? new ConnectivityConfig();
             lastConnectionsRefresh = DateTime.UtcNow;
+            MarkOnline();
         }
         catch
         {
             lastConnectionsRefresh = DateTime.UtcNow;
+            MarkOffline();
         }
     }
 
     private string CacheLogo(DeckAppTemplate app)
     {
         if (string.IsNullOrWhiteSpace(app.LogoUrl))
+            return app.LogoPath;
+
+        if (!CanContactCompanion())
             return app.LogoPath;
 
         try
@@ -180,8 +204,24 @@ public sealed class PcCompanionClient
         }
         catch
         {
+            MarkOffline();
             return app.LogoPath;
         }
+    }
+
+    private bool CanContactCompanion()
+    {
+        return IsEnabled && DateTime.UtcNow >= companionOfflineUntil;
+    }
+
+    private void MarkOffline()
+    {
+        companionOfflineUntil = DateTime.UtcNow.Add(OfflineBackoff);
+    }
+
+    private void MarkOnline()
+    {
+        companionOfflineUntil = DateTime.MinValue;
     }
 
     private static PcCompanionSettings LoadSettings(string path)
