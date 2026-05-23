@@ -186,11 +186,23 @@ public sealed class PcCompanionClient
 
     private static PcCompanionSettings LoadSettings(string path)
     {
-        if (!File.Exists(path))
-            return new PcCompanionSettings();
+        PcCompanionSettings settings;
 
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        return JsonSerializer.Deserialize<PcCompanionSettings>(File.ReadAllText(path), options) ?? new PcCompanionSettings();
+        if (!File.Exists(path))
+        {
+            settings = new PcCompanionSettings();
+        }
+        else
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            settings = JsonSerializer.Deserialize<PcCompanionSettings>(File.ReadAllText(path), options) ?? new PcCompanionSettings();
+        }
+
+        var baseUrl = Environment.GetEnvironmentVariable("S70_PC_COMPANION_URL");
+        if (!string.IsNullOrWhiteSpace(baseUrl))
+            settings.BaseUrl = baseUrl.Trim();
+
+        return settings;
     }
 
     private static string Sanitize(string value)
@@ -208,5 +220,5 @@ public sealed class PcCompanionClient
 public sealed class PcCompanionSettings
 {
     public bool Enabled { get; set; } = true;
-    public string BaseUrl { get; set; } = "http://192.168.7.91:5055";
+    public string BaseUrl { get; set; } = "";
 }
