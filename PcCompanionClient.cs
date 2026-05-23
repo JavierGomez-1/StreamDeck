@@ -8,16 +8,20 @@ public sealed class PcCompanionClient
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMilliseconds(900);
     private static readonly TimeSpan OfflineBackoff = TimeSpan.FromSeconds(20);
 
+    private readonly object syncRoot = new();
     private readonly HttpClient httpClient;
     private readonly string settingsPath;
     private readonly string iconFolder;
     private PcCompanionSettings settings;
     private List<DeckAppTemplate> cachedCatalog = new();
     private DateTime lastCatalogRefresh = DateTime.MinValue;
+    private bool catalogRefreshInProgress;
     private List<DeckAppTemplate> cachedInstalledApps = new();
     private DateTime lastInstalledRefresh = DateTime.MinValue;
+    private bool installedRefreshInProgress;
     private ConnectivityConfig cachedConnections = new();
     private DateTime lastConnectionsRefresh = DateTime.MinValue;
+    private bool connectionsRefreshInProgress;
     private DateTime companionOfflineUntil = DateTime.MinValue;
 
     public PcCompanionClient(string settingsPath)
@@ -32,64 +36,18 @@ public sealed class PcCompanionClient
 
     public IReadOnlyList<DeckAppTemplate> GetCatalog()
     {
-        if (!CanContactCompanion())
-            return cachedCatalog;
+        StartCatalogRefreshIfNeeded();
 
-        if ((DateTime.UtcNow - lastCatalogRefresh).TotalSeconds < 5)
-            return cachedCatalog;
-
-        try
-        {
-            var response = httpClient.GetFromJsonAsync<List<DeckAppTemplate>>($"{settings.BaseUrl.TrimEnd('/')}/api/catalog").GetAwaiter().GetResult();
-            cachedCatalog = response ?? new List<DeckAppTemplate>();
-            foreach (var app in cachedCatalog)
-            {
-                app.Action = "pc-launch";
-                app.Command = app.Id;
-                app.LogoPath = CacheLogo(app);
-            }
-
-            lastCatalogRefresh = DateTime.UtcNow;
-            MarkOnline();
-        }
-        catch
-        {
-            lastCatalogRefresh = DateTime.UtcNow;
-            MarkOffline();
-        }
-
-        return cachedCatalog;
+        lock (syncRoot)
+            return cachedCatalog.ToList();
     }
 
     public IReadOnlyList<DeckAppTemplate> GetInstalledApps()
     {
-        if (!CanContactCompanion())
-            return cachedInstalledApps;
+        StartInstalledRefreshIfNeeded();
 
-        if ((DateTime.UtcNow - lastInstalledRefresh).TotalSeconds < 10)
-            return cachedInstalledApps;
-
-        try
-        {
-            var response = httpClient.GetFromJsonAsync<List<DeckAppTemplate>>($"{settings.BaseUrl.TrimEnd('/')}/api/installed/templates").GetAwaiter().GetResult();
-            cachedInstalledApps = response ?? new List<DeckAppTemplate>();
-            foreach (var app in cachedInstalledApps)
-            {
-                app.Action = "pc-launch";
-                app.Command = app.Id;
-                app.LogoPath = CacheLogo(app);
-            }
-
-            lastInstalledRefresh = DateTime.UtcNow;
-            MarkOnline();
-        }
-        catch
-        {
-            lastInstalledRefresh = DateTime.UtcNow;
-            MarkOffline();
-        }
-
-        return cachedInstalledApps;
+        lock (syncRoot)
+            return cachedInstalledApps.ToList();
     }
 
     public async Task<DeckActionResult> LaunchAsync(string appId)
@@ -119,14 +77,18 @@ public sealed class PcCompanionClient
 
     public IReadOnlyList<WiFiConnectionProfile> GetWiFiNetworks()
     {
-        RefreshConnections();
-        return cachedConnections.WiFiNetworks;
+        StartConnectionsRefreshIfNeeded();
+
+        lock (syncRoot)
+            return cachedConnections.WiFiNetworks.ToList();
     }
 
     public IReadOnlyList<BluetoothConnectionProfile> GetBluetoothDevices()
     {
-        RefreshConnections();
-        return cachedConnections.BluetoothDevices;
+        StartConnectionsRefreshIfNeeded();
+
+        lock (syncRoot)
+            return cachedConnections.BluetoothDevices.ToList();
     }
 
     public async Task<DeckActionResult> RunStreamActionAsync(string actionId)
@@ -157,35 +119,146 @@ public sealed class PcCompanionClient
         }
     }
 
-    private void RefreshConnections()
+    private void StartCatalogRefreshIfNeeded()
     {
-        if (!CanContactCompanion())
+        if (!TryBeginRefresh(ref catalogRefreshInProgress, lastCatalogRefresh, TimeSpan.FromSeconds(5)))
             return;
 
-        if ((DateTime.UtcNow - lastConnectionsRefresh).TotalSeconds < 5)
+        Task.Run(async () =>
+        {
+            try
+            {
+                var response = await httpClient.GetFromJsonAsync<List<DeckAppTemplate>>($"{settings.BaseUrl.TrimEnd('/')}/api/catalog")
+                    ?? new List<DeckAppTemplate>();
+
+                foreach (var app in response)
+                {
+                    app.Action = "pc-launch";
+                    app.Command = app.Id;
+                    app.LogoPath = await CacheLogoAsync(app);
+                }
+
+                lock (syncRoot)
+                {
+                    cachedCatalog = response;
+                    lastCatalogRefresh = DateTime.UtcNow;
+                    MarkOnlineLocked();
+                }
+            }
+            catch
+            {
+                lock (syncRoot)
+                {
+                    lastCatalogRefresh = DateTime.UtcNow;
+                    MarkOfflineLocked();
+                }
+            }
+            finally
+            {
+                lock (syncRoot)
+                    catalogRefreshInProgress = false;
+            }
+        });
+    }
+
+    private void StartInstalledRefreshIfNeeded()
+    {
+        if (!TryBeginRefresh(ref installedRefreshInProgress, lastInstalledRefresh, TimeSpan.FromSeconds(10)))
             return;
 
-        try
+        Task.Run(async () =>
         {
-            cachedConnections = httpClient.GetFromJsonAsync<ConnectivityConfig>($"{settings.BaseUrl.TrimEnd('/')}/api/connections")
-                .GetAwaiter()
-                .GetResult() ?? new ConnectivityConfig();
-            lastConnectionsRefresh = DateTime.UtcNow;
-            MarkOnline();
-        }
-        catch
+            try
+            {
+                var response = await httpClient.GetFromJsonAsync<List<DeckAppTemplate>>($"{settings.BaseUrl.TrimEnd('/')}/api/installed/templates")
+                    ?? new List<DeckAppTemplate>();
+
+                foreach (var app in response)
+                {
+                    app.Action = "pc-launch";
+                    app.Command = app.Id;
+                    app.LogoPath = await CacheLogoAsync(app);
+                }
+
+                lock (syncRoot)
+                {
+                    cachedInstalledApps = response;
+                    lastInstalledRefresh = DateTime.UtcNow;
+                    MarkOnlineLocked();
+                }
+            }
+            catch
+            {
+                lock (syncRoot)
+                {
+                    lastInstalledRefresh = DateTime.UtcNow;
+                    MarkOfflineLocked();
+                }
+            }
+            finally
+            {
+                lock (syncRoot)
+                    installedRefreshInProgress = false;
+            }
+        });
+    }
+
+    private void StartConnectionsRefreshIfNeeded()
+    {
+        if (!TryBeginRefresh(ref connectionsRefreshInProgress, lastConnectionsRefresh, TimeSpan.FromSeconds(5)))
+            return;
+
+        Task.Run(async () =>
         {
-            lastConnectionsRefresh = DateTime.UtcNow;
-            MarkOffline();
+            try
+            {
+                var response = await httpClient.GetFromJsonAsync<ConnectivityConfig>($"{settings.BaseUrl.TrimEnd('/')}/api/connections")
+                    ?? new ConnectivityConfig();
+
+                lock (syncRoot)
+                {
+                    cachedConnections = response;
+                    lastConnectionsRefresh = DateTime.UtcNow;
+                    MarkOnlineLocked();
+                }
+            }
+            catch
+            {
+                lock (syncRoot)
+                {
+                    lastConnectionsRefresh = DateTime.UtcNow;
+                    MarkOfflineLocked();
+                }
+            }
+            finally
+            {
+                lock (syncRoot)
+                    connectionsRefreshInProgress = false;
+            }
+        });
+    }
+
+    private bool TryBeginRefresh(ref bool inProgress, DateTime lastRefresh, TimeSpan refreshInterval)
+    {
+        lock (syncRoot)
+        {
+            if (!CanContactCompanionLocked())
+                return false;
+
+            if (inProgress)
+                return false;
+
+            if (DateTime.UtcNow - lastRefresh < refreshInterval)
+                return false;
+
+            inProgress = true;
+            return true;
         }
     }
 
-    private string CacheLogo(DeckAppTemplate app)
+    private async Task<string> CacheLogoAsync(DeckAppTemplate app)
     {
         if (string.IsNullOrWhiteSpace(app.LogoUrl))
-            return app.LogoPath;
-
-        if (!CanContactCompanion())
             return app.LogoPath;
 
         try
@@ -196,30 +269,50 @@ public sealed class PcCompanionClient
 
             if (!File.Exists(path) || (DateTime.UtcNow - File.GetLastWriteTimeUtc(path)).TotalHours > 12)
             {
-                byte[] bytes = httpClient.GetByteArrayAsync(app.LogoUrl).GetAwaiter().GetResult();
-                File.WriteAllBytes(path, bytes);
+                byte[] bytes = await httpClient.GetByteArrayAsync(app.LogoUrl);
+                await File.WriteAllBytesAsync(path, bytes);
             }
 
             return path;
         }
         catch
         {
-            MarkOffline();
+            lock (syncRoot)
+                MarkOfflineLocked();
+
             return app.LogoPath;
         }
     }
 
     private bool CanContactCompanion()
     {
+        lock (syncRoot)
+            return CanContactCompanionLocked();
+    }
+
+    private bool CanContactCompanionLocked()
+    {
         return IsEnabled && DateTime.UtcNow >= companionOfflineUntil;
     }
 
     private void MarkOffline()
     {
-        companionOfflineUntil = DateTime.UtcNow.Add(OfflineBackoff);
+        lock (syncRoot)
+            MarkOfflineLocked();
     }
 
     private void MarkOnline()
+    {
+        lock (syncRoot)
+            MarkOnlineLocked();
+    }
+
+    private void MarkOfflineLocked()
+    {
+        companionOfflineUntil = DateTime.UtcNow.Add(OfflineBackoff);
+    }
+
+    private void MarkOnlineLocked()
     {
         companionOfflineUntil = DateTime.MinValue;
     }
